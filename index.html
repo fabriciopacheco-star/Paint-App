@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi App tipo Paint</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #1a365d; /* Fondo azul oscuro */
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #ffffff;
+      margin-bottom: 15px;
+    }
+
+    .paint-container {
+      background-color: #2b6cb0; /* Fondo azul contenedor */
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+    }
+
+    canvas {
+      background-color: #ffffff;
+      border-radius: 8px;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      background-color: #1e4e8c;
+      padding: 10px 15px;
+      border-radius: 8px;
+    }
+
+    .group {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .group-label {
+      color: #e2e8f0;
+      font-size: 14px;
+      font-weight: bold;
+      margin-right: 4px;
+    }
+
+    /* Botones de colores */
+    .color-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #ffffff;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .color-btn:hover, .color-btn.active {
+      transform: scale(1.2);
+      border-color: #ffd700;
+    }
+
+    /* Botones de acción y grosor */
+    .btn {
+      background-color: #ffffff;
+      color: #1a365d;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .btn:hover {
+      background-color: #e2e8f0;
+    }
+
+    .btn.active {
+      background-color: #ffd700;
+      color: #000;
+    }
+
+    .btn-clear {
+      background-color: #e53e3e;
+      color: #ffffff;
+    }
+
+    .btn-clear:hover {
+      background-color: #c53030;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Mi App de Pintura</h1>
+
+  <div class="paint-container">
+    <canvas id="paintCanvas" width="700" height="450"></canvas>
+
+    <div class="toolbar">
+      <!-- 5 Colores -->
+      <div class="group">
+        <span class="group-label">Color:</span>
+        <button class="color-btn active" style="background-color: #000000;" data-color="#000000"></button>
+        <button class="color-btn" style="background-color: #e53e3e;" data-color="#e53e3e"></button>
+        <button class="color-btn" style="background-color: #3182ce;" data-color="#3182ce"></button>
+        <button class="color-btn" style="background-color: #38a169;" data-color="#38a169"></button>
+        <button class="color-btn" style="background-color: #dd6b20;" data-color="#dd6b20"></button>
+      </div>
+
+      <!-- 3 Grosores -->
+      <div class="group">
+        <span class="group-label">Grosor:</span>
+        <button class="btn btn-size active" data-size="2">Fino</button>
+        <button class="btn btn-size" data-size="6">Medio</button>
+        <button class="btn btn-size" data-size="12">Grueso</button>
+      </div>
+
+      <!-- Botón Borrar Todo -->
+      <div class="group">
+        <button class="btn btn-clear" id="btnClear">Borrar Todo</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('paintCanvas');
+    const ctx = canvas.getContext('2d');
+    const clearBtn = document.getElementById('btnClear');
+    const colorBtns = document.querySelectorAll('.color-btn');
+    const sizeBtns = document.querySelectorAll('.btn-size');
+
+    let isDrawing = false;
+    let currentColor = '#000000';
+    let currentLineWidth = 2;
+
+    // Ajustar propiedades de trazo
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    function startDrawing(e) {
+      isDrawing = true;
+      const { x, y } = getCoordinates(e);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    }
+
+    function draw(e) {
+      if (!isDrawing) return;
+      const { x, y } = getCoordinates(e);
+      ctx.strokeStyle = currentColor;
+      ctx.lineWidth = currentLineWidth;
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    }
+
+    function stopDrawing() {
+      isDrawing = false;
+      ctx.beginPath();
+    }
+
+    function getCoordinates(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    }
+
+    // Eventos de Mouse
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseleave', stopDrawing);
+
+    // Eventos Touch (Móviles / Tablets)
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrawing(e); });
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
+    canvas.addEventListener('touchend', stopDrawing);
+
+    // Cambiar Color
+    colorBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        colorBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentColor = btn.getAttribute('data-color');
+      });
+    });
+
+    // Cambiar Grosor
+    sizeBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        sizeBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentLineWidth = btn.getAttribute('data-size');
+      });
+    });
+
+    // Borrar todo
+    clearBtn.addEventListener('click', () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+  </script>
+</body>
+</html>
